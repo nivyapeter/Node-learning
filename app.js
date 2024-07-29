@@ -1,3 +1,4 @@
+const { render } = require('ejs');
 const express = require('express');
 const mongoose = require('mongoose');
 const Blog = require('./Models/blog');
@@ -10,6 +11,10 @@ const app = express();
 const dbUrl = "mongodb+srv://netninja:test1234@nodetuts.clcdvie.mongodb.net/node-tuts?retryWrites=true&w=majority"
 mongoose.connect(dbUrl, {}).then((result) => app.listen(3000)).catch((err) => console.log(err));
 
+// register view engine
+
+app.set('view engine', 'ejs');
+app.use(express.urlencoded({ extended: true }))
 
 app.get('/add-blog', (req, res) => {
     const blog = new Blog({
@@ -42,18 +47,47 @@ app.get('/', (req, res) => {
 // blog routes
 
 app.get('/blogs', (req, res) => {
-    Blog.find().sort({createdAt: -1})
+    Blog.find().sort({ createdAt: -1 })
         .then((result) => {
             res.render('index', { title: 'All blogs', blogs: result })
         })
         .catch((err) => console.log(err));
 })
 
-// register view engine
+app.post('/blogs', (req, res) => {
+    const blog = new Blog(req.body);
 
-app.set('view engine', 'ejs');
+    blog.save()
+        .then((result) => {
+            res.redirect('/blogs')
+        })
+        .catch((err) => {
+            console.log(err)
+        })
+})
 
-// // listen for request
+app.get('/blogs/:id', (req, res) => {
+    const id = req.params.id;
+    Blog.findById(id)
+        .then((result) => {
+            res.render('details', { title: 'Blog details', blog: result })
+        })
+        .catch((err) => {
+            console.log(err);
+        })
+})
+
+app.delete('/blogs/:id', (req, res) => {
+    const id = req.params.id;
+
+    Blog.findByIdAndDelete(id)
+        .then((result) => {
+           res.json({redirect: '/blogs'})
+        })
+        .catch((err) => console.log(err))
+})
+
+// listen for request
 
 // app.listen(3000);
 
@@ -72,15 +106,15 @@ app.set('view engine', 'ejs');
 //     res.render('about')
 // })
 
-// app.get('/blogs/create', (req, res) => {
-//     res.render('create');
-// })
+app.get('/blogs/create', (req, res) => {
+    res.render('create');
+})
 
-// // redirect
+// redirect
 
-// app.get('/about-us', (req, res) => {
-//     res.redirect('/about')
-// });
+app.get('/about-us', (req, res) => {
+    res.redirect('/about')
+});
 
 // app.use((req, res) => {
 //     res.sendFile('./views/404.html', { root: __dirname })
